@@ -1,0 +1,2 @@
+# model
+generate table struct
