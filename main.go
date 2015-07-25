@@ -120,7 +120,7 @@ func ProduceModel() {
 		if len(columns) == 0 {
 			failed.PushBack(table)
 		}
-		fmt.Println("cloums is ", columns)
+
 		templateArgs := map[string]interface{}{
 			"Table":  table,
 			"Colums": columns,
