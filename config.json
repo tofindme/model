@@ -1,0 +1,13 @@
+{
+    "dbhost": "127.0.0.1",
+    "dbport": "3306",
+    "user": "root",
+    "pass": "root",
+    "database": "information_schema",
+    "schema": "test",
+    "table": [
+        "test",
+        "employee_logins"
+    ],
+    "outdir": "."
+}

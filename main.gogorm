@@ -1,0 +1,159 @@
+package main
+
+import (
+	// "bytes"
+	"container/list"
+	// "database/sql"
+	"fmt"
+	_ "github.com/go-sql-driver/mysql"
+	// "gopkg.in/gorp.v1"
+	"github.com/jinzhu/gorm"
+	// "log"
+	"os"
+	"sync"
+)
+
+var (
+	Cfg   YbParams
+	Dba   gorm.DB
+	GLock sync.Mutex
+)
+
+func init() {
+	//read config
+	cfg, err := InitCfg("config.json")
+	if err != nil {
+		fmt.Println("init config failed! ", err)
+		panic(err)
+	}
+	Cfg = cfg
+
+	//get db instance
+	db, err := InitDb()
+	if err != nil {
+		fmt.Println("init db failed! ", err)
+		panic(err)
+	}
+	Dba = db
+}
+
+func InitDb() (db gorm.DB, err error) {
+	db, err = gorm.Open("mysql", Cfg.ConnStr())
+	if err != nil {
+		fmt.Println("open sql failed")
+		return
+	}
+	db.DB()
+	err = db.DB().Ping()
+	return
+}
+
+func ProduceModel() {
+
+	task := make(chan int, 4)
+	done := make(chan bool)
+	failed := list.New()
+
+	count := len(Cfg.Tables)
+	if count == 0 {
+		fmt.Println("not found table to procee")
+		return
+	}
+
+	if Cfg.OutDir == "." || Cfg.OutDir == "./" {
+		err := os.Mkdir("Models", os.ModePerm)
+		if err != nil && !os.IsExist(err) {
+			fmt.Println("create dir failed ", err)
+			return
+		}
+	} else {
+		err := os.MkdirAll(Cfg.OutDir, os.ModePerm)
+		if err != nil && !os.IsExist(err) {
+			fmt.Println("create dir failed ", err)
+			return
+		}
+	}
+	Cfg.OutDir += "Models"
+
+	fmt.Println("hello")
+
+	ToFile := func(table string) {
+		fmt.Printf("to process %s table\n", table)
+
+		/*
+			sql := `select COLUMN_NAME,DATA_TYPE from COLUMNS where table_name = '%s' and table_schema ='%s';`
+			// sql = fmt.Sprintf(sql, table, Cfg.Schema)
+			var columns []TableStru
+			_, err := Dba.Select(&columns, sql, table, Cfg.Schema)
+			if err != nil {
+				fmt.Printf("scan table column from database failed for : %s \n", table)
+				failed.PushBack(table)
+			}
+
+			if len(columns) == 0 {
+				failed.PushBack(table)
+			}
+			fmt.Println("cloums is ", columns)
+		*/
+
+		sql := `select COLUMN_NAME,DATA_TYPE from COLUMNS where table_name = '%s' and table_schema ='%s';`
+		sql = fmt.Sprintf(sql, table, Cfg.Schema)
+		var columns []TableStru
+		columns = make([]TableStru, 10)
+		row, err := Dba.Table("COLUMNS").Select("COLUMN_NAME,DATA_TYPE").Where("table_name = ? and table_schema = ?", table, Cfg.Schema).Rows()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		defer row.Close()
+
+		i := 0
+		for row.Next() {
+			row.Scan(&columns[i].ColumName, &columns[i].ColumType)
+		}
+
+		if len(columns) > 0 {
+			fmt.Println("columns is ", columns)
+		}
+
+		//a task successful
+		// GLock.Lock()
+		currTask := <-task
+		// GLock.Unlock()
+		if currTask == count-1 {
+			done <- true
+		}
+	}
+
+	fmt.Println("count is ", count)
+
+	for index, table := range Cfg.Tables {
+		fmt.Println("begin to do jobs")
+		//assign task
+		task <- index
+		go ToFile(table)
+	}
+
+	//wait end
+	<-done
+
+	if failed.Len() > 0 {
+		fmt.Println("the failed table list follown:")
+		table := 0
+		for ele := failed.Front(); ele != nil; ele.Next() {
+			if table%5 == 0 {
+				fmt.Println()
+			} else {
+				fmt.Printf("%s\t", ele.Value.(string))
+			}
+		}
+	}
+	fmt.Printf("congratulataions to see file in %s dir\n", Cfg.OutDir)
+}
+
+func main() {
+	fmt.Println("cfgs ", Cfg)
+	// buf := new(bytes.Buffer)
+	// Dba.TraceOn("gorp", log.New(os.Stdout, "model", log.Lshortfile|log.Ltime))
+	ProduceModel()
+}
