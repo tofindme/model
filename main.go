@@ -169,7 +169,6 @@ func ProduceModel() {
 }
 
 func main() {
-	fmt.Println("cfgs ", Cfg)
 	// buf := new(bytes.Buffer)
 	Dba.TraceOn("", log.New(os.Stdout, "model", log.Lshortfile|log.Ltime))
 	ProduceModel()
