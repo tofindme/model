@@ -4,6 +4,7 @@
 **生成后示例**
 
 ```
+
 package Model
 
 type test struct {
@@ -15,7 +16,8 @@ type test struct {
 
 
 ### 配置文件说明
-```
+
+```json
 {
     "dbhost": "127.0.0.1",
     "dbport": "3306",
@@ -52,6 +54,12 @@ outdir| 生成struct的存放目录|
 - 使用的数据库orm是gorp使用前需下载 `go get gopkg.in/gorp.v1`
 - 准备好后可以直接`go run *.go`运行查看输出目录(outdir)下的文件
 - 生成的文件代码已经通过`gofmt -s -w filename`格式化
+
+
+**表多的时候是通过4外goroutine一起玩成工作的**
+
+
+**生成代码是用模版完成**
 
 
 
