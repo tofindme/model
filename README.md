@@ -48,7 +48,7 @@ outdir| 生成struct的存放目录|
 ### 使用说明
 - 需要安装go环境
 - 在config.json文件添加相应配置参数
-- 代码是在ubuntu14.04上做的
+- 代码是在ubuntu14.04编译运行
 - 使用的数据库orm是gorp使用前需下载 `go get gopkg.in/gorp.v1`
 - 生成的文件代码已经通过`gofmt -s -w filename`格式化
 - 准备好后可以直接`go run *.go`运行查看输出目录(outdir)下的文件
